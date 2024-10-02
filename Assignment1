@@ -1,0 +1,82 @@
+% % Allows me to use my previously defined functions
+% addpath('C:/Users/matte/OneDrive/Bureau/1-DTU/DSP/functions/');
+
+function [Y, freq] = make_spectrum(signal, fs)
+% Computes the complex spectrum of a signal.
+% Inputs:
+%  - signal: The time-domain signal
+%  - fs: Sampling frequency (in Hz)
+% Outputs:
+%  - Y: The complex spectrum (Fourier Transform)
+%  - freq: Frequency vector
+
+% compute spectrum
+Y = fft(signal);
+
+% The FFT needs to be scaled in order to give a physically plausible scaling.
+Y = Y/(length(Y));
+
+% frequency vector
+delta_f = fs/length(Y);
+freq_pos = 0:delta_f:fs/2;
+freq_neg = (-fs/2)+delta_f:delta_f:-delta_f;
+
+freq = [freq_pos freq_neg];
+
+% convert into column vector (if required)
+Y = Y(:);
+freq = freq(:);
+
+end
+
+% --------------------------------------
+
+% Signal properties
+fs = 44100; % Sampling frequency
+delta_f = 2; % How far apart in Hz two samples are
+
+% Import of the recording of my voice
+[y, fs_y] = audioread('iiii.mp4');
+
+% This implements the 2 Hz gap (delta_f) between each sample
+N = length(y);
+N_target = fs/delta_f;
+y_cropped = y(1:N_target); 
+
+
+t = (0:length(y_cropped)-1)/fs_y; % Time vector
+f_signal = 500; % Frequency of the signal in Hz
+
+% Make frequency spectrum for voice recording
+[Y1, freq1] = make_spectrum(y_cropped, fs_y);
+
+% Generate the clean sine wave signal
+clean_signal = 0.32 * sin(2*pi*f_signal*t + 3.5); % I changed the amplitude and added a phase to match the voice recording signal better.
+
+% Make frequency spectrum for clean signal
+[Y2, freq2] = make_spectrum(clean_signal, fs);
+
+% Plot the clean signal and voice recording in time domain
+figure;
+plot(t, y_cropped, 'b')
+hold on
+plot(t, clean_signal, 'r');
+ylim([-0.4 0.4])
+xlim([0.275 0.282])
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Signals in time domain');
+legend("voice recording", "clean signal")
+hold off
+
+% Plot the frequency spectrums of the clean signal and voice recording
+figure;
+plot(freq1(1:length(freq1)/2), 20*log10(abs(Y1(1:length(freq1)/2))), 'b');
+hold on
+plot(freq2(1:length(freq2)/2), 20*log10(abs(Y2(1:length(freq2)/2))), 'r', 'LineWidth', 2);
+xlabel('Frequency (Hz)');
+ylabel('Amplitude');
+title('Signals in frequency domain');
+legend("voice recording", "clean signal")
+xlim([0 3000])
+ylim([-420 0])
